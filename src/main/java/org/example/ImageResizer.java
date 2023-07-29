@@ -1,5 +1,7 @@
 package org.example;
 
+import org.imgscalr.Scalr;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -32,18 +34,9 @@ public class ImageResizer implements Runnable{
                         if(image != null) {
                             int newHeight = Math.round(image.getHeight() / (image.getWidth() / (float) newWidth));
 
-                            BufferedImage newImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
 
-                            int widthStep = image.getWidth() / newWidth;
-                            int heightStep = image.getHeight() / newHeight;
-
-                            for (int i = 0; i < newWidth; i++) {
-                                for (int j = 0; j < newHeight; j++) {
-                                    //System.out.print(image.getRGB(j, i) + " ");
-                                    int rgb = image.getRGB(i * widthStep, j * heightStep);
-                                    newImage.setRGB(i, j, rgb);
-                                }
-                            }
+//                            BufferedImage newImage = Scalr.resize(image, newWidth, newHeight);
+                            BufferedImage newImage = Scalr.resize(image, Scalr.Method.ULTRA_QUALITY, newWidth, newHeight);
 
                             ImageIO.write(newImage, "jpeg", new File(toDir + "/" + file.getName()));
                         }
