@@ -1,8 +1,8 @@
 package org.example;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
+import javax.swing.plaf.IconUIResource;
 import java.io.File;
+import java.lang.reflect.Array;
+import java.util.Arrays;
 
 public class Main {
     public static void main(String [] ars){
@@ -10,41 +10,39 @@ public class Main {
         String toDir = "/home/nicholas/IdeaProjects/PicturesResizer/to";
 
         int newWidth = 300;
+        File[] files = new File(fromDir).listFiles();
+        int coresNumber = Runtime.getRuntime().availableProcessors();
+        int nofost = files.length/coresNumber;
+
         long start = System.currentTimeMillis();
 
-        File[] files = new File(fromDir).listFiles();
+        System.out.println("Running program on " + coresNumber + " cores!");
+//        System.out.println(nofost + " files on single thread!");
+//        System.out.println(files.length + " files in total!");
+//        System.out.println((files.length - nofost*coresNumber) + " files in plus!");
 
-        try {
-            if (files != null) {
-                for (File file : files) {
-                    if(file.isFile()){
-                        BufferedImage image = ImageIO.read(file);
+        //Dividing files array
+        File[][] dividedFiles = new File[coresNumber][];
 
-                        if(image != null) {
-                            int newHeight = Math.round(image.getHeight() / (image.getWidth() / (float) newWidth));
-
-                            BufferedImage newImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
-
-                            int widthStep = image.getWidth() / newWidth;
-                            int heightStep = image.getHeight() / newHeight;
-
-                            for (int i = 0; i < newWidth; i++) {
-                                for (int j = 0; j < newHeight; j++) {
-                                    //System.out.print(image.getRGB(j, i) + " ");
-                                    int rgb = image.getRGB(i * widthStep, j * heightStep);
-                                    newImage.setRGB(i, j, rgb);
-                                }
-                            }
-
-                            ImageIO.write(newImage, "jpeg", new File(toDir + "/" + file.getName()));
-                        }
-                    }
-                }
-            }
-        } catch(Exception ex){
-            ex.printStackTrace();
+        for(int i=0; i<coresNumber-1; i++){
+            dividedFiles[i] = new File[nofost];
+            System.arraycopy(files, i*nofost, dividedFiles[i], 0, dividedFiles[i].length);
         }
 
-        System.out.println("Finished in " + (System.currentTimeMillis()-start) + "ms");
+        dividedFiles[coresNumber-1] = new File[nofost + (files.length - nofost*coresNumber)];
+        System.arraycopy(files, (coresNumber-1)*nofost, dividedFiles[coresNumber-1], 0, dividedFiles[coresNumber-1].length);
+
+
+//        System.out.println("\t\tChecking:");
+//        for(int i=0; i<coresNumber; i++){
+//            System.out.println("Array " + i);
+//            System.out.println("\tlength" + dividedFiles[i].length);
+//            Arrays.asList(dividedFiles[i]).forEach((a)-> System.out.println("\t" + a.getName()));
+//        }
+
+        for (int i = 0; i < coresNumber; i++) {
+            new Thread(new ImageResizer(dividedFiles[i], toDir, newWidth, start, i)).start();
+        }
+
     }
 }
